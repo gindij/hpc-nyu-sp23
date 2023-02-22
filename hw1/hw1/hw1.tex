@@ -1,0 +1,162 @@
+\documentclass[11pt]{article}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+
+\input{~/Dropbox/Documents/latex_template/preamble/packages}
+\input{~/Dropbox/Documents/latex_template/preamble/math}
+
+\title{High Performance Computing: HW1}
+\author{Jack Gindi}
+
+\begin{document}
+
+\maketitle
+
+\section*{Problem 1}
+I made my mini-presentation on DistGNN on 1/30/2023.
+
+\section*{Problem 2}
+The processor I used was the Apple M1 Max. The timing results are shown in the table below:
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Dimension} & \textbf{\texttt{-O0} Time (s)} & \textbf{\texttt{-O3} Time (s)} \\ \hline
+    100                & 0.328585              & 0.027163              \\ \hline
+    200                & 2.602556              & 0.229702              \\ \hline
+    300                & 8.786613              & 0.945254              \\ \hline
+    400                & 20.864195             & 2.471498              \\ \hline
+    500                & 41.699594             & 5.070169              \\ \hline
+    \end{tabular}
+    \caption{Timings for different matrix sizes with different compiler optimization flags.}
+\end{table}
+
+When I used the \texttt{-O0} flag, I observed approximately 0.3 Gflops/s and 0.6 GB/s. When
+I used the \texttt{-O3} flag, I observed on average approximately 3 Gflops/s and 6 GB/s, a 10x increase.
+
+\section*{Problem 3}
+As in problem 2, I used the M1 Max architecture.
+
+\subsection*{Using \texttt{-O0}}
+For $N = 10$, it took about 200 Gauss-Seidel iterations and 0.00003s. For $N = 1000$, it took
+almost 2,000,000 in 18s. For $N = 100,000$, it never finished, but I would estimate on
+the order of 2 billion ($200,000 \times 10,000$). It took about 10s for 10,000 iterations, so for 2 billion iterations, it would likely take about 555 hours.
+
+\subsection*{Using \texttt{-O3}}
+For $N = 10$, it took about 200 Gauss-Seidel iterations and 0.000008s. For $N = 1000$, it took
+almost 2,000,000 in 4.5s. For $N = 100,000$, it never finished, but I would estimate on
+the order of 2 billion ($200,000 \times 10,000$). It took about 2.5s for 10,000 iterations, so for 2 billion iterations, it would likely take about 138 hours.
+
+\subsection*{Code listing} 
+The code used to generate the above data is given below:
+\begin{verbatim}
+#include <stdio.h>
+#include <math.h>
+#include "utils.h"
+
+double res_norm(double* u, int n) {
+    double h2 = 1. / ((n + 1) * (n + 1));
+    double res = 0;
+    double Aui;
+
+    for (int i = 0; i < n; i++) {
+        Aui = 2 * u[i];
+        if (i - 1 >= 0) Aui -= u[i-1];
+        if (i + 1 <  n) Aui -= u[i+1];
+        Aui /= h2;
+        res += (Aui - 1) * (Aui - 1);
+    }
+
+    return sqrt(res);
+}
+
+void jacobi_step(double **u, double** u_next, int n) {
+
+    double h2 = 1. / ((n + 1) * (n + 1));
+    double s;
+
+    for (int i = 0; i < n; i++) {
+        s = 0;
+        if (i - 1 >= 0) s += -(*u)[i-1];
+        if (i + 1 < n)  s += -(*u)[i+1];
+        (*u_next)[i] = (h2 - s) / 2;
+    }
+
+    for (int i = 0; i < n; i++) {
+        (*u)[i] = (*u_next)[i];
+    }
+}
+
+void gauss_seidel_step(double** u, double** u_next, int n) {
+    
+    double h2 = 1. / ((n + 1) * (n + 1));
+    double s;
+
+    for (int i = 0; i < n; i++) {
+        s = 0;
+        if (i - 1 >= 0) s += -(*u)[i-1];
+        if (i + 1 <  n) s += -(*u)[i+1];
+        (*u)[i] = (h2 - s) / 2;
+    }
+}
+
+int solve(
+    int n, 
+    int max_iter,
+    double epsilon, 
+    void (*step_fn)(double**, double**, int), 
+    int verbose
+) {
+
+    double* u      = (double*) calloc(n, sizeof(double));
+    double* u_next = (double*) calloc(n, sizeof(double));
+
+    int iter;
+    double init_res_norm = res_norm(u, n);
+    for (iter = 0; iter < max_iter; iter++) {
+        step_fn(&u, &u_next, n);
+        double r_norm = res_norm(u, n);
+        if (verbose)
+            printf(
+                "iteration %d: %5f (decrease factor = %5f)\n", 
+                iter + 1, 
+                r_norm, 
+                init_res_norm / r_norm
+            );
+        if (r_norm / init_res_norm < epsilon) 
+            break;
+        iter += 1;
+    }
+
+    free(u);
+    free(u_next);
+
+    return iter;
+}
+
+
+int main(int argc, char** argv) {
+
+    const int    N        = read_option<int>("-N", argc, argv);
+    const int    MAX_ITER = read_option<int>("-maxiter", argc, argv);
+    const int    VERBOSE  = read_option<int>("-v", argc, argv);
+    const double EPSILON  = 1e-4;
+    
+    Timer t2;
+    t2.tic();
+    int iters_gs = solve(N, MAX_ITER, EPSILON, &gauss_seidel_step, VERBOSE);
+    double time_gs = t2.toc();
+    printf(
+        "Gauss-Seidel (N = %d, max iters = %d): time = %f, iters = %d\n", 
+        N, 
+        MAX_ITER, 
+        time_gs, 
+        iters_gs
+    );
+
+    return 0;
+}
+\end{verbatim}
+
+\end{document}
+
