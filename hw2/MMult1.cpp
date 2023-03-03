@@ -2,10 +2,10 @@
 
 #include <stdio.h>
 #include <math.h>
-// #include <omp.h> 
+#include <omp.h>
 #include "utils.h"
 
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 64
 
 // Note: matrices are stored in column major order; i.e. the array elements in
 // the (m x n) matrix C are stored in the sequence: {C_00, C_10, ..., C_m0,
@@ -25,7 +25,22 @@ void MMult0(long m, long n, long k, double *a, double *b, double *c) {
 }
 
 void MMult1(long m, long n, long k, double *a, double *b, double *c) {
-  // TODO: See instructions below
+  int block_row_start, block_col_start, row, col, kk;
+  #pragma omp parallel for num_threads(m / BLOCK_SIZE)
+  for (block_row_start = 0; block_row_start < m; block_row_start += BLOCK_SIZE) {
+    for (block_col_start = 0; block_col_start < n; block_col_start += BLOCK_SIZE) {
+      for (kk = 0; kk < k; kk++) {
+        for (col = block_col_start; col < block_col_start + BLOCK_SIZE; col++) {
+          for (row = block_row_start; row < block_row_start + BLOCK_SIZE; row++) {
+            double aik = a[row + kk  * m];
+            double bkj = b[kk  + col * k];
+            double cij = c[row + col * m];
+            c[row + col * m] = cij + aik * bkj;
+          }
+        }
+      }
+    }
+  }
 }
 
 int main(int argc, char** argv) {
@@ -58,8 +73,8 @@ int main(int argc, char** argv) {
       MMult1(m, n, k, a, b, c);
     }
     double time = t.toc();
-    double flops = 0; // TODO: calculate from m, n, k, NREPEATS, time
-    double bandwidth = 0; // TODO: calculate from m, n, k, NREPEATS, time
+    double flops = m * n * k * 2. * NREPEATS / time / 1000000000; // TODO: calculate from m, n, k, NREPEATS, time
+    double bandwidth = m * n * k * 4. * NREPEATS / time / 1000000000; // TODO: calculate from m, n, k, NREPEATS, time
     printf("%10ld %10f %10f %10f", p, time, flops, bandwidth);
 
     double max_err = 0;
