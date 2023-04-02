@@ -9,20 +9,17 @@
 #include "utils.h"
 
 void solve(double** u, long n, const long maxiter, const double eps) {
+
     long    total_iters      = 0;
     double  initial_res_norm = residual_norm(u, n);
     double* u_next           = (double*) malloc(n * n * sizeof(double));
     double  h                = 1.0 / (n + 1);
 
-#ifdef _OPENMP
-    int p = omp_get_max_threads() * 2;
-#endif
-
     for (long i = 0; i < n * n; i++) u_next[i] = 0.0;
 
     for (long iter = 0; iter < maxiter; iter++) {
 
-        #pragma omp parallel num_threads(p)
+        #pragma omp parallel
         {
             #pragma omp for
             for (long i = 0; i < n * n; i++) {
@@ -37,7 +34,6 @@ void solve(double** u, long n, const long maxiter, const double eps) {
             #pragma omp for
             for (long i = 0; i < n * n; i++) (*u)[i] = u_next[i];
         }
-
         double res_norm = residual_norm(&u_next, n);
         // printf("res norm: %f\n", res_norm);
         if (res_norm / initial_res_norm < eps) break;
