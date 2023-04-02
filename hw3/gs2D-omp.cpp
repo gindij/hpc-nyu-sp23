@@ -27,6 +27,7 @@ void solve(double** u, long n, const long maxiter, const double eps) {
                 if (i >= 1       ) s += (*u)[i-1];
                 if (i < n * n - 1) s += (*u)[i+1];
                 (*u)[i] = 0.25 * (h * h + s);
+                printf("updating %ld\n", i);
             }
 
             // black
@@ -38,12 +39,14 @@ void solve(double** u, long n, const long maxiter, const double eps) {
                 if (i >= 1       ) s += (*u)[i-1];
                 if (i < n * n - 1) s += (*u)[i+1];
                 (*u)[i] = 0.25 * (h * h + s);
+                printf("updating %ld\n", i);
             }
         }
         double res_norm = residual_norm(u, n);
         // printf("res norm: %f\n", res_norm);
         if (res_norm / initial_res_norm < eps) break;
         total_iters = iter;
+        printf("======\n");
     }
 
     printf("total iters: %ld\n", total_iters + 1);
@@ -77,7 +80,7 @@ void solve(double** u, long n, const long maxiter, const double eps) {
 #endif
 
 int main() {
-    long         N       = 1000;
+    long         N       = 3;
     const long   maxiter = 5000;
     const double eps     = 1e-4;
     double*      u       = (double*) malloc(N * N * sizeof(double));
