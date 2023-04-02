@@ -3,6 +3,8 @@
 #include <math.h>
 #include <omp.h>
 
+#define CACHE_LINE_SIZE 64
+
 // Scan A array and write result into prefix_sum array;
 // use long data type to avoid overflow
 void scan_seq(long* prefix_sum, const long* A, long n) {
@@ -15,7 +17,7 @@ void scan_seq(long* prefix_sum, const long* A, long n) {
 
 void printarr(const long* x, long n) {
   for (long i = 0; i < n; i++) {
-    printf("%d\n", x[i]);
+    printf("%ld\n", x[i]);
   }
   printf("=========\n");
 }
@@ -25,60 +27,51 @@ void scan_omp(long* prefix_sum, const long* A, long n) {
   // Do a scan in parallel on each chunk, then share/compute the offset
   // through a shared vector and update each chunk by adding the offset
   // in parallel
-  int p = 128;
+  int p = omp_get_max_threads() * 2;
+  printf("num threads = %d\n", p);
   int block_size = n / p + 1;
 
   long* sums = (long*) malloc((p + 1) * sizeof(long));
   for (int i = 0; i < p + 1; i++) sums[i] = 0;
 
-  double tt = omp_get_wtime();
   #pragma omp parallel num_threads(p)
   {
-    #pragma omp for schedule(static, block_size) nowait
-    for (long i = 0; i < n; i++) {
-      long t = omp_get_thread_num();
-      sums[t+1] += A[i];
-    }
-
     #pragma omp for schedule(static, block_size)
     for (long i = 0; i < n; i++) {
-      prefix_sum[i] = (i % block_size > 0) * (prefix_sum[i-1] + A[i-1]);
+      long t = omp_get_thread_num();
+      sums[t] += A[i];
     }
   }
-  printf("first par section time = %fs\n", omp_get_wtime() - tt);
 
-  // printarr(prefix_sum, n);
-  // printarr(sums, p);
-
-  tt = omp_get_wtime();
-  // accumulate the sums serially
-  for (int t = 1; t < p; t++) {
-    sums[t] += sums[t-1];
-  }
-  printf("accumulation time = %fs\n", omp_get_wtime() - tt);
-
-
-  tt = omp_get_wtime();
   #pragma omp parallel num_threads(p)
   {
-    int t = omp_get_thread_num();
-    for (long di = 0; di < block_size; di++) {
-      long i = t * block_size + di;
-      if (i < n) prefix_sum[i] += sums[t];
+    long t = omp_get_thread_num();
+    long start_idx = t * block_size;
+    long end_idx = std::min((t + 1) * block_size, n);
+    prefix_sum[start_idx] = 0;
+    for (long i = start_idx + 1; i < end_idx; i++) {
+      prefix_sum[i] = prefix_sum[i-1] + A[i-1];
     }
   }
-  printf("first par section time = %fs\n", omp_get_wtime() - tt);
 
+  // accumulate the sums serially
+  for (int t = 1; t < p; t++) sums[t] += sums[t-1];
 
+  #pragma omp parallel for schedule(static, block_size) num_threads(p)
+  for (long i = block_size; i < n; i++) {
+    int t = omp_get_thread_num();
+    prefix_sum[i] += sums[t];
+  }
   free(sums);
 }
 
 int main() {
-  long N = 100000000;
+  long N = 900000000;
+  printf("N = %ld\n", N);
   long* A = (long*) malloc(N * sizeof(long));
   long* B0 = (long*) malloc(N * sizeof(long));
   long* B1 = (long*) malloc(N * sizeof(long));
-  for (long i = 0; i < N; i++) A[i] = i; rand();
+  for (long i = 0; i < N; i++) A[i] = rand();
   for (long i = 0; i < N; i++) B1[i] = 0;
 
   double tt = omp_get_wtime();

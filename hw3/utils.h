@@ -1,0 +1,1 @@
+double residual_norm(double** u, long n);
