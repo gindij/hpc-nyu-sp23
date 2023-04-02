@@ -2,7 +2,7 @@ CC = g++
 OPTLEVEL = -O3
 CFLAGS = -Wall
 
-all: scan jac gs
+all: jac gs scan
 
 scan:
 	$(CC) $(CFLAGS) $(OPTLEVEL) -fopenmp omp-scan.cpp -o omp-scan

@@ -1,0 +1,16 @@
+total iters: 221
+N = 10: 0.000565s
+total iters: 821
+N = 20: 0.002110s
+total iters: 3140
+N = 40: 0.015069s
+total iters: 5000
+N = 80: 0.065915s
+total iters: 5000
+N = 160: 0.243306s
+total iters: 5000
+N = 320: 0.953423s
+total iters: 5000
+N = 640: 3.780788s
+total iters: 5000
+N = 1280: 15.985313s

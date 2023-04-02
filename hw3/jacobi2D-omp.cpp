@@ -55,12 +55,14 @@ int main() {
 
     solve(&u, N, maxiter, eps);
 
-    // for (long i = 0; i < N; i++) {
-    //     for (long j = 0; j < N; j++) {
-    //         printf("%f ", u[i*N+j]);
-    //     }
-    //     printf("\n");
-    // }
+    if (N <= 10) {
+        for (long i = 0; i < N; i++) {
+            for (long j = 0; j < N; j++) {
+                printf("%f ", u[i*N+j]);
+            }
+            printf("\n");
+        }
+    }
 
     free(u);
 
