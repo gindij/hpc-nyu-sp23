@@ -1,0 +1,59 @@
+QUESTION 1
+a) Because no chunk-size is specified, OpenMP will use a chunk-size of loop length / threads. Therefore, in this
+case, the chunk-size would be 5. The program would be executed as follows:
+
+first loop:
+    thread 1: f(1), ..., f(5)
+    thread 2: f(6), ..., f(10)
+
+second loop:
+    thread 1: f(10), ..., f(6)
+    thread 2: f(5), ..., f(1)
+
+In the first loop, thread 1 would take 40ms and thread 2 would take 15ms, so thread 1 would have to wait
+25ms. In the second loop, using a similar calculation but with the roles of the two threads reversed, thread 2
+would have to wait 25ms. Thus, there are 80ms of total execution time, of which 50ms are wait time.
+
+b) This time, the loop execution would look like this:
+
+first loop:
+    thread 1: f(1), f(3), f(5), f(7), f(9)
+    thread 2: f(2), f(4), f(6), f(8), f(10)
+
+second loop:
+    thread 1: f(10), f(8), f(6), f(4), f(2)
+    thread 2: f(9), f(7), f(5), f(3), f(1)
+
+For the first loop, thread 1 takes 25ms and thread 2 takes 30ms, resulting in 5ms of waiting time. For thread 2 the times are reversed, resulting in another 5ms of waiting time. The execution time is thus 60ms, with 10ms of
+total waiting time.
+
+c) Using dynamic would make the loops look like this:
+
+first loop:
+    thread 1: f(1), f(3), f(5), f(7), f(9)
+    thread 2: f(2), f(4), f(6), f(8), f(10)
+
+second loop:
+    thread 1: f(10), f(7), f(6), f(3), f(2)
+    thread 2: f(9), f(8), f(5), f(4), f(1)
+
+(The behavior of the second loop depends on which of the threads gets assigned f(6) after 10, 9, 8, 7 have been finished, because those take the same amount of theoretical time. Same goes for which thread gets assigned 2 and 1.)
+
+In this example, the first loop has 5ms of waiting time. The second loop has 28ms of execution time and 1ms of waiting time, so the total time is 58ms, with 6ms of waiting time.
+
+d) Using nowait, we get:
+
+thread 1: f(1), f(3), ..., f(9), f(10), f(8), ..., f(2)
+thread 2: f(2), f(4), ..., f(10), f(9), f(7), ..., f(1)
+
+This results in no wait time and 55ms of total execution time.
+
+QUESTION 2
+The code for this part was run on box890. The timings can be found in scan.txt. Though I'm not sure what speedups to expect, we do observe (as we expect)
+that for large enough problems, the code speeds up increasing the number of threads to 6 (which is the value of omp_get_max_threads()), and then degrades
+beyond that.
+
+QUESTION 3
+This code was also run on box890. Each algorithm was run until convergence or to 5000 iterations. The timings can be found in gs.txt and jacobi.txt for
+the Gauss-Seidel (red-black parallel and sequential) and Jacobi algorithms respectively. We observe the same phenomenon we observed in this code that
+we did in question 2 (where performance increases up to 6 threads for large enough problems).

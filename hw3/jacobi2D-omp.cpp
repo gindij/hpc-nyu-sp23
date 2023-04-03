@@ -8,7 +8,7 @@
 
 #include "utils.h"
 
-void solve(double** u, long n, const long maxiter, const double eps) {
+long solve(double** u, long n, const long maxiter, const double eps, const int p) {
 
     long    total_iters      = 0;
     double  initial_res_norm = residual_norm(u, n);
@@ -19,7 +19,7 @@ void solve(double** u, long n, const long maxiter, const double eps) {
 
     for (long iter = 0; iter < maxiter; iter++) {
 
-        #pragma omp parallel
+        #pragma omp parallel num_threads(p)
         {
             #pragma omp for
             for (long i = 0; i < n * n; i++) {
@@ -42,29 +42,52 @@ void solve(double** u, long n, const long maxiter, const double eps) {
 
     free(u_next);
 
-    printf("total iters: %ld\n", total_iters + 1);
+    return total_iters;
 }
 
 int main() {
-    long         N       = 1000;
+    long         Ns[]    = {10, 20, 40, 80, 160, 320, 640, 1280};
+    int          ps[]    = {1, 2, 4, 6, 8, 16, 32};
+    int          nN      = 8;
+    int          np      = 7;
     const long   maxiter = 5000;
     const double eps     = 1e-4;
-    double*      u       = (double*) malloc(N * N * sizeof(double));
 
-    for (long i = 0; i < N * N; i++) u[i] = 0.0;
+    // double*      u       = (double*) malloc(N * N * sizeof(double));
 
-    solve(&u, N, maxiter, eps);
+    // for (long i = 0; i < N * N; i++) u[i] = 0.0;
 
-    if (N <= 10) {
-        for (long i = 0; i < N; i++) {
-            for (long j = 0; j < N; j++) {
-                printf("%f ", u[i*N+j]);
-            }
-            printf("\n");
+    // solve(&u, N, maxiter, eps);
+
+    // if (N <= 10) {
+    //     for (long i = 0; i < N; i++) {
+    //         for (long j = 0; j < N; j++) {
+    //             printf("%f ", u[i*N+j]);
+    //         }
+    //         printf("\n");
+    //     }
+    // }
+
+    // free(u);
+
+    printf("omp max threads: %d", omp_get_max_threads());
+
+    for (int i = 0; i < nN; i++) {
+        long N = Ns[i];
+        printf("N = %ld\t", N);
+        for (int j = 0; j < np; j++) {
+            int p = ps[j];
+            double* u = (double*) malloc(N * N * sizeof(double));
+            for (long j = 0; j < N * N; j++) u[j] = 0.0;
+
+            double tt = omp_get_wtime();
+            solve(&u, N, maxiter, eps, p);
+            free(u);
+            printf("p = %d: %fs  ", p, omp_get_wtime() - tt);
         }
+        printf("\n");
     }
 
-    free(u);
 
     return 0;
 }
