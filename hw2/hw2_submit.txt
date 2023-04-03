@@ -1,0 +1,3 @@
+The repository is here: https://github.com/gindij/hpc-nyu-sp23.
+
+The assignment can be found in the hw2 directory, and the file with timings is hw2.txt.
