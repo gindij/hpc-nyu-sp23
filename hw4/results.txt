@@ -1,0 +1,9 @@
+Question 1:
+The latency and bandwidth are:
+pingpong latency: 1.085477e-03 ms
+pingpong bandwidth: 1.164037e+01 GB/s
+
+The nodes were cs[482-483].
+
+Question 2:
+
