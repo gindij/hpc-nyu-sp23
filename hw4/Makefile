@@ -1,14 +1,17 @@
-CXX = mpic++ # or mpicxx
+CXX = mpic++
 CXXFLAGS = -std=c++11 -O3 -march=native -fopenmp
 
-TARGETS = $(basename $(wildcard *.cpp))
+CPPTARGETS = $(basename $(wildcard *.cpp))
 
-all : $(TARGETS)
+all : pingpong int_ring
 
-%:%.cpp *.h
+pingpong: pingpong.cpp
+	$(CXX) $(CXXFLAGS) $< $(LIBS) -o $@
+
+int_ring: int_ring.cpp
 	$(CXX) $(CXXFLAGS) $< $(LIBS) -o $@
 
 clean:
-	-$(RM) $(TARGETS) *~
+	-$(RM) $(CPPTARGETS) *.o
 
 .PHONY: all, clean

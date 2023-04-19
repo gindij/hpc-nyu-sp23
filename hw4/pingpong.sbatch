@@ -7,7 +7,7 @@
 #SBATCH --job-name=pingpong
 #SBATCH --mail-type=END
 #SBATCH --mail-user=jg6848@nyu.edu
-#SBATCH --output=slurm_%j.out
+#SBATCH --output=slurm_pingpong_%j.out
 
 module purge
 module load openmpi/gcc/3.1.4
