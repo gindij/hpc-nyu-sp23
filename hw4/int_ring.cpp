@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
 
   double* msg_array = (double*) malloc(Nelts * sizeof(double));
   for (long i = 0; i < Nelts; i++) msg_array[i] = 0.12345;
-  long msg_int = 0;
+  long msg_long = 0;
 
   MPI_Init(&argc, &argv);
 
@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
     if (send_array)
       ring_recieve_send_array(&msg_array, Nelts, world_size, comm);
     else
-      ring_recieve_send_int(&msg_int, world_size, comm);
+      ring_recieve_send_int(&msg_long, world_size, comm);
     MPI_Barrier(comm);
     loops_done++;
     // printf("loops done = %d (out of %ld)\n", loops_done, Nloops);
@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
       printf("elements      = %ld\n", Nelts);
       printf("result[0]     = %f\n", msg_array[0]);
     } else {
-      printf("result        = %d\n", msg_int);
+      printf("result        = %d\n", msg_long);
     }
   }
 

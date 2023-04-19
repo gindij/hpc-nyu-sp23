@@ -1,9 +1,27 @@
-Question 1:
+The code for this assignment can be found in this repo: https://github.com/gindij/hpc-nyu-sp23 in the hw4
+directory.
+
+QUESTION 1:
+The implementation can be found in pingpong.cpp. It can be run with the command `sbatch pingpong.sbatch`.
 The latency and bandwidth are:
 pingpong latency: 1.085477e-03 ms
 pingpong bandwidth: 1.164037e+01 GB/s
 
 The nodes were cs[482-483].
 
-Question 2:
+QUESTION 2:
+The implementation can be found in int_ring.cpp. It can be run with the command `sbatch int_ring.sbatch`.
+I used four nodes with one task per node.
 
+For each pass around the ring of size N, there are N messages that are sent and received.
+
+For the case where we send a single long, we sent 4 messages in each loop. 100k loops (400k messages)
+took 0.75 seconds, so the latency is approximately 0.75s / 400k = 0.000001875 = 1.875ns.
+(This relationship also help for smaller numbers of loops).
+
+When we send arrays, each message has 250k longs, which means each is around 2MB. 100k loops
+would send a total message volume of: 4 messages per ring * 100k loops * 2MB per message = 800GB.
+This completed in approximately 111s, so the bandwidth of the system is ~800/111 = 72GB/s.
+
+QUESTION 3:
+The implementation can be found in mpi_scan.cpp. It can be run with the command `sbatch mpi_scan.sbatch`.
